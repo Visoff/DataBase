@@ -12,9 +12,7 @@ func assert(cond bool) {
 }
 
 func TestSimple(t *testing.T) {
-    var st storage = &RamStorage{
-        data: [][][]byte{},
-    }
+    var st storage = &SimpleRamStorage{}
     int_field := IntField{"smth"}
     table := New(
     	"Main",
@@ -29,8 +27,7 @@ func TestSimple(t *testing.T) {
     if err != nil {
         t.Error(err)
     }
-    assert(len(data) == 1)
-    assert(data[0][0] == int32(10000))
+    assert((*data.Next())[0] == int32(10000))
     err = table.Insert([]interface{}{int32(20000)})
     if err != nil {
         t.Error(err)
@@ -48,7 +45,22 @@ func TestSimple(t *testing.T) {
     if err != nil {
         t.Error(err)
     }
-    assert(len(data) == 2)
-    assert(data[0][0] == int32(30000))
-    assert(data[1][0] == int32(20000))
+    assert((*data.Next())[0] == int32(20000))
+    assert((*data.Next())[0] == int32(30000))
+    count, err := table.Delete(&filter{
+    	field: 0,
+    	op: func(el interface{}) bool {
+    		return el.(int32) >= int32(20000)
+    	},
+    })
+    if err != nil {
+        t.Error(err)
+    }
+    assert(count == 2)
+    data, err = table.Select()
+    if err != nil {
+        t.Error(err)
+    }
+    assert((*data.Next())[0] == int32(10000))
+    assert(data.Next() == nil)
 }
